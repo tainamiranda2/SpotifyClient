@@ -1,20 +1,32 @@
-from auth import get_authorization_code, get_access_token
-from playlists import fetch_playlists
-from player import play_playlist
-from urllib.parse import urlencode
+import socket
 
 def main():
-    print("=== SportyClient CLI ===")
-    code = get_authorization_code()
-    token = get_access_token(code)
-    
-    if token:
-        playlists = fetch_playlists(token)
-        if playlists:
-            choice = int(input("Escolha uma playlist pelo número: ")) - 1
-            selected_playlist = playlists[choice]
-            print(f"Tocando: {selected_playlist['name']}")
-            play_playlist(token, selected_playlist["uri"])
+    HOST = '127.0.0.1'
+    PORT = 5000
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((HOST, PORT))
+    s.listen()
+
+    print("Servidor aguardando conexão do cliente...")
+    conn, addr = s.accept()
+    print(f"Conectado ao cliente em {addr}")
+
+    track_id = input("Digite o ID da música: ").strip()
+    if not track_id:
+        print("ID da música não pode ser vazio. Encerrando conexão.")
+        conn.close()
+        s.close()
+        return
+
+    conn.sendall(track_id.encode())
+
+    response = conn.recv(4096)
+    print("Informações da música recebidas do cliente:")
+    print(response.decode())
+
+    conn.close()
+    s.close()
+    print("Conexão encerrada.")
 
 if __name__ == "__main__":
     main()
